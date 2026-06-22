@@ -1,5 +1,5 @@
-// 📄 ไฟล์ employees.js (เวอร์ชันแก้ไขชื่อตัวแปรตรงตามโค้ดหน้าเว็บและดึงสถิติจริง 100%)
-const excelEmployees = [
+// 📄 ไฟล์ employees.js (เวอร์ชันแก้ชื่อตัวแปรตรงระบบเดิม + คีย์ตัวเลขเป๊ะ 100%)
+const employees = [
     { id: "1001", firstName: "มณเทียน", lastName: "ทองมนต์", department: "คลังสินค้าและขนส่ง", leaveSick: 0, leaveBusiness: 0, leaveVacation: 1, lateCount: 0 },
     { id: "1002", firstName: "มาลัย", lastName: "สุยะตุ่น", department: "คลังสินค้าและขนส่ง", leaveSick: 1, leaveBusiness: 0, leaveVacation: 0, lateCount: 0 },
     { id: "1003", firstName: "ชูศักดิ์", lastName: "สุยะตุ่น", department: "คลังสินค้าและขนส่ง", leaveSick: 0, leaveBusiness: 2, leaveVacation: 0, lateCount: 0 },
@@ -46,5 +46,4 @@ const excelEmployees = [
     { id: "1100", firstName: "พรรณธิภา", lastName: "เสาร์สูงยาง", department: "คลังสินค้าและขนส่ง", leaveSick: 1, leaveBusiness: 0, leaveVacation: 1, lateCount: 2 },
     { id: "1102", firstName: "ณิชาภา", lastName: "เหลียวดูดี", department: "จัดซื้อ", leaveSick: 0, leaveBusiness: 0.3, leaveVacation: 0, lateCount: 4 },
     { id: "1105", firstName: "ดนุสรณ์", lastName: "ระวังชนม์", department: "คลังสินค้าและขนส่ง", leaveSick: 1, leaveBusiness: 0, leaveVacation: 0, lateCount: 0 },
-    { id: "1107", firstName: "พรกนก", lastName: "สายเปา", department: "บัญชีและการเงิน", leaveSick: 0, leaveBusiness: 0, leaveVacation: 0, lateCount: 0 },
-    { id: "1108
+    { id: "1107", firstName: "พรกนก", lastName: "สายเปา", department: "บัญชีและการเงิน", leaveSick: 0, leaveBusiness: 0, leaveVacation
