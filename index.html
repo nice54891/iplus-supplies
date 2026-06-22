@@ -30,6 +30,8 @@
         .badge-ลากิจ { background-color: #3b82f6; }
         .badge-ขาดงาน { background-color: #ef4444; }
         .summary-num { font-weight: bold; text-align: center; }
+        .btn-delete { background:#ef4444; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size: 12px; font-weight: bold; }
+        .btn-delete:hover { background:#dc2626; }
     </style>
 </head>
 <body>
@@ -65,7 +67,7 @@
 </div>
 
 <div class="container">
-    <h3>📊 3. สรุปจำนวน ขาด ลา มาสาย สะสม แยกบุคคล</h3>
+    <h3>📊 3. สรุปจำนวน ขาด ลา มาสาย สะสม แยกบุคคล (และจัดการรายชื่อ)</h3>
     <table>
         <thead>
             <tr>
@@ -75,6 +77,7 @@
                 <th style="color:#3b82f6;text-align:center;">กิจ (ครั้ง)</th>
                 <th style="color:#ef4444;text-align:center;">ขาด (ครั้ง)</th>
                 <th>รวมสาย (นาที)</th>
+                <th>จัดการพนักงาน</th>
             </tr>
         </thead>
         <tbody id="summary-individual-table"></tbody>
@@ -85,7 +88,7 @@
     <h3>📋 4. ตารางประวัติรายงานประจำวัน</h3>
     <table>
         <thead>
-            <tr><th>วันที่</th><th>รหัสพนักงาน</th><th>ชื่อ-นามสกุล</th><th>แผนก</th><th>สถานะ</th><th>สาย (นาที)</th><th>หมายเหตุ</th><th>จัดการ</th></tr>
+            <tr><th>วันที่</th><th>รหัสพนักงาน</th><th>ชื่อ-นามสกุล</th><th>แผนก</th><th>สถานะ</th><th>สาย (นาที)</th><th>หมายเหตุ</th><th>จัดการประวัติ</th></tr>
         </thead>
         <tbody id="attendance-table"></tbody>
     </table>
@@ -100,7 +103,6 @@
     let employees = JSON.parse(localStorage.getItem("employeesData")) || [];
     let attendanceLogs = JSON.parse(localStorage.getItem("attendanceLogs")) || [];
 
-    // เรียกทำงานฟังก์ชันแสดงผลทันทีหลังเปิดหน้าเว็บ
     updateEmployeeSelect();
     renderTable();
 
@@ -136,7 +138,7 @@
                     <td>${log.date}</td><td><b>${log.employeeId}</b></td><td>${emp.firstName} ${emp.lastName}</td><td>${emp.department}</td>
                     <td><span class="badge badge-${log.status}">${log.status}</span></td>
                     <td>${log.lateMinutes > 0 ? log.lateMinutes + ' นาที' : '-'}</td><td><font color="gray">${log.remark || '-'}</font></td>
-                    <td><button style="background:#ef4444;color:white;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;" onclick="deleteLog('${log.date + log.employeeId}')">ลบ</button></td>
+                    <td><button class="btn-delete" onclick="deleteLog('${log.date + log.employeeId}')">ลบประวัติ</button></td>
                 </tr>`;
             }
         });
@@ -155,75 +157,4 @@
             summaryBody.innerHTML += `<tr>
                 <td><b>${emp.id}</b></td><td>${emp.firstName} ${emp.lastName}</td><td>${emp.department}</td>
                 <td class="summary-num" style="color:#f59e0b;">${late}</td><td class="summary-num" style="color:#ec4899;">${sick}</td>
-                <td class="summary-num" style="color:#3b82f6;">${personal}</td><td class="summary-num" style="color:#ef4444;">${absent}</td>
-                <td><b>${totalMinutes > 0 ? totalMinutes + ' นาที' : '-'}</b></td>
-            </tr>`;
-        });
-    }
-
-    function autoSaveLog() {
-        const date = document.getElementById("log-date").value;
-        const employeeId = document.getElementById("log-emp-select").value;
-        const status = document.getElementById("log-status").value;
-        const lateMinutes = parseInt(document.getElementById("log-late").value) || 0;
-        const remark = document.getElementById("log-remark").value.trim();
-        if (!employeeId || !date) return;
-
-        const idx = attendanceLogs.findIndex(log => log.date === date && log.employeeId === employeeId);
-        if (idx > -1) {
-            attendanceLogs[idx] = { date, employeeId, status, lateMinutes, remark };
-        } else {
-            attendanceLogs.push({ date, employeeId, status, lateMinutes, remark });
-        }
-        localStorage.setItem("attendanceLogs", JSON.stringify(attendanceLogs));
-        renderTable();
-    }
-
-    function addEmployee() {
-        const id = document.getElementById("emp-id").value.trim();
-        const firstName = document.getElementById("emp-firstname").value.trim();
-        const lastName = document.getElementById("emp-lastname").value.trim();
-        const department = document.getElementById("emp-dept").value.trim();
-        if (!id || !firstName || !lastName || !department) return alert("กรอกข้อมูลไม่ครบถ้วนค๊าบ!");
-
-        if (employees.some(e => e.id === id)) return alert("รหัสพนักงานซ้ำค๊าบ!");
-        
-        employees.push({ id, firstName, lastName, department, password: "1234" });
-        localStorage.setItem("employeesData", JSON.stringify(employees));
-        
-        document.getElementById("emp-id").value = "";
-        document.getElementById("emp-firstname").value = "";
-        document.getElementById("emp-lastname").value = "";
-        document.getElementById("emp-dept").value = "";
-        
-        updateEmployeeSelect();
-        renderTable();
-        alert("🎉 เพิ่มพนักงานเข้าเครื่องสำเร็จแล้วค๊าบ ✨");
-    }
-
-    function changeMyPassword() {
-        const newPass = prompt("กรอกรหัสผ่านใหม่:", currentUser.password || "1234");
-        if (!newPass || !newPass.trim()) return;
-        
-        const idx = employees.findIndex(e => e.id === currentUser.id);
-        if(idx > -1) {
-            employees[idx].password = newPass.trim();
-            localStorage.setItem("employeesData", JSON.stringify(employees));
-        }
-        alert("เปลี่ยนรหัสผ่านเรียบร้อยแล้วครับ");
-    }
-
-    function deleteLog(id) {
-        if(!confirm("ต้องการลบรายการนี้ใช่ไหมครับ?")) return;
-        attendanceLogs = attendanceLogs.filter(log => (log.date + log.employeeId) !== id);
-        localStorage.setItem("attendanceLogs", JSON.stringify(attendanceLogs));
-        renderTable();
-    }
-
-    function logout() {
-        sessionStorage.clear();
-        window.location.href = "login.html"; 
-    }
-</script>
-</body>
-</html>
+                <td class="summary-num" style="color:#3b8
