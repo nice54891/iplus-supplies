@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ลงทะเบียนพนักงานใหม่ - Sign In</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f4f8; margin: 0; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        .signin-card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 450px; box-sizing: border-box; text-align: center; }
+        h2 { margin-top: 0; color: #2c3e50; margin-bottom: 25px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; margin-bottom: 20px; }
+        .form-group { display: flex; flex-direction: column; }
+        .full-width { grid-column: span 2; }
+        label { font-size: 13px; font-weight: bold; color: #4a5568; margin-bottom: 6px; }
+        input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        button { width: 100%; background-color: #10b981; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 10px; }
+        .switch-link { display: inline-block; margin-top: 20px; font-size: 14px; color: #2563eb; text-decoration: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="signin-card">
+    <h2>📝 ลงทะเบียนบัญชีพนักงานใหม่</h2>
+    <div class="form-grid">
+        <div class="form-group full-width">
+            <label>รหัสพนักงาน (ใช้ล็อกอิน)</label>
+            <input type="text" id="new-id" placeholder="เช่น EMP001">
+        </div>
+        <div class="form-group">
+            <label>ชื่อจริง</label>
+            <input type="text" id="new-firstname" placeholder="สมศักดิ์">
+        </div>
+        <div class="form-group">
+            <label>นามสกุล</label>
+            <input type="text" id="new-lastname" placeholder="รักดี">
+        </div>
+        <div class="form-group full-width">
+            <label>แผนก / ฝ่าย</label>
+            <input type="text" id="new-dept" placeholder="เช่น การตลาด">
+        </div>
+        <div class="form-group full-width">
+            <label>กำหนดรหัสผ่าน (Password)</label>
+            <input type="password" id="new-password" placeholder="ตั้งรหัสผ่าน...">
+        </div>
+    </div>
+    <button onclick="registerEmployee()">✨ ลงทะเบียนระบบ</button>
+    <br>
+    <a class="switch-link" href="login.html">⬅️ มีบัญชีอยู่แล้ว? ไปหน้าเข้าสู่ระบบ</a>
+</div>
+
+<script>
+    function registerEmployee() {
+        const id = document.getElementById("new-id").value.trim();
+        const firstName = document.getElementById("new-firstname").value.trim();
+        const lastName = document.getElementById("new-lastname").value.trim();
+        const department = document.getElementById("new-dept").value.trim();
+        const password = document.getElementById("new-password").value.trim();
+
+        if (!id || !firstName || !lastName || !department || !password) {
+            alert("กรุณากรอกข้อมูลให้ครบถ้วนนะค๊าบ!");
+            return;
+        }
+
+        let employees = JSON.parse(localStorage.getItem("employeesData")) || [];
+
+        if(employees.some(e => e.id === id)) {
+            alert("❌ รหัสพนักงานนี้เคยลงทะเบียนแล้วค๊าบ!");
+            return;
+        }
+
+        // เซฟลงหน่วยความจำของคอมตัวเองทันที
+        employees.push({ id, firstName, lastName, department, password });
+        localStorage.setItem("employeesData", JSON.stringify(employees));
+
+        alert("🎉 ลงทะเบียนพนักงานสำเร็จแล้วค๊าบ!");
+        window.location.href = "login.html";
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <script>
+        if (sessionStorage.getItem("isLoggedIn") !== "true") {
+            window.location.href = "login.html";
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบันทึกเวลาทำงาน - ไอ พลัส ซัพพลายส์</title>
+    
+    <script src="employees.js"></script>
+    <script src="attendanceLogs.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f4f8; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .header-bar { width: 100%; max-width: 1100px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #e2e8f0; padding: 12px 20px; border-radius: 10px; box-sizing: border-box; }
+        .btn-action { border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-left: 10px; }
+        .btn-logout { background-color: #64748b; color: white; }
+        .btn-password { background-color: #0ea5e9; color: white; }
+        .container { width: 100%; max-width: 1100px; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 20px; box-sizing: border-box; }
+        h2, h3 { color: #2c3e50; margin-top: 0; }
+        .form-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 10px; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; }
+        label { font-size: 14px; font-weight: bold; color: #4a5568; margin-bottom: 5px; display: block; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        button.btn-add { background-color: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; align-self: end; }
+        button.btn-add:hover { background-color: #059669; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+        th { background-color: #0f172a; color: white; }
+        .summary-num { font-weight: bold; text-align: center; }
+        .btn-delete { background:#ef4444; color:white; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-size: 12px; font-weight: bold; }
+        .btn-delete:hover { background:#dc2626; }
+    </style>
+</head>
+<body>
+
+<div class="header-bar">
+    <div>👤 ผู้ใช้งานปัจจุบัน: <span id="current-user-display" style="font-weight: bold; color: #1e3a8a;"></span></div>
+    <div>
+        <button class="btn-action btn-password" onclick="changeMyPassword()">🔑 เปลี่ยนรหัสผ่าน</button>
+        <button class="btn-action btn-logout" onclick="logout()">🔒 ออกจากระบบ</button>
+    </div>
+</div>
+
+<div class="container">
+    <h2>➕ 1. เพิ่มรายชื่อพนักงานใหม่เข้าระบบ</h2>
+    <div class="form-group">
+        <div><label>รหัสพนักงาน</label><input type="text" id="emp-id" placeholder="เช่น 1202"></div>
+        <div><label>ชื่อจริง</label><input type="text" id="emp-firstname" placeholder="เช่น สมชาย"></div>
+        <div><label>นามสกุล</label><input type="text" id="emp-lastname" placeholder="เช่น ใจดี"></div>
+        <div>
+            <label>แผนก</label>
+            <select id="emp-dept">
+                <option value="คลังสินค้าและขนส่ง">คลังสินค้าและขนส่ง</option>
+                <option value="ขายและการตลาด">ขายและการตลาด</option>
+                <option value="บัญชีและการเงิน">บัญชีและการเงิน</option>
+                <option value="จัดซื้อ">จัดซื้อ</option>
+                <option value="บุคคลและความปลอดภัย">บุคคลและความปลอดภัย</option>
+                <option value="เลขาผู้บริหาร">เลขาผู้บริหาร</option>
+                <option value="QMR/DCC/QC">QMR/DCC/QC</option>
+            </select>
+        </div>
+        <button class="btn-add" onclick="addNewEmployee()">+ บันทึกพนักงาน</button>
+    </div>
+</div>
+
+<div class="container">
+    <h2>📝 2. บันทึก/แก้ไขสถานะการทำงาน (เลือกรายชื่อเพื่อคีย์เพิ่ม)</h2>
+    <div class="form-group">
+        <div><label>วันที่เกิดเหตุ</label><input type="date" id="log-date" onchange="autoSaveLog()"></div>
+        <div><label>เลือกพนักงาน</label><select id="log-emp-select" onchange="autoSaveLog()"></select></div>
+        <div>
+            <label>สถานะ</label>
+            <select id="log-status" onchange="toggleLateInput(); autoSaveLog();">
+                <option value="มาสาย">มาสาย</option>
+                <option value="ลาป่วย">ลาป่วย</option>
+                <option value="ลากิจ">ลากิจ</option>
+                <option value="ลาพักร้อน">ลาพักร้อน</option>
+                <option value="ขาดงาน">ขาดงาน</option>
+            </select>
+        </div>
+        <div id="late-minutes-group"><label>สาย (นาที)</label><input type="number" id="log-late" value="0" min="0" oninput="autoSaveLog()"></div>
+        <div><label>หมายเหตุ / รายละเอียด</label><input type="text" id="log-remark" placeholder="ระบุเหตุผล..." oninput="autoSaveLog()"></div>
+    </div>
+</div>
+
+<div class="container">
+    <h3>📊 สรุปประวัติการ ขาด ลา มาสาย ประจำปี 2569 (แยกรายบุคคลรวมก้อน)</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>รหัสพนักงาน</th>
+                <th>ชื่อ - นามสกุล</th>
+                <th>แผนก</th>
+                <th style="color:#f59e0b;text-align:center;">สาย (ครั้ง)</th>
+                <th style="color:#ec4899;text-align:center;">ป่วย (ครั้ง)</th>
+                <th style="color:#3b82f6;text-align:center;">กิจ (ครั้ง)</th>
+                <th style="color:#10b981;text-align:center;">พักร้อน (ครั้ง)</th>
+                <th style="color:#ef4444;text-align:center;">ขาด (ครั้ง)</th>
+                <th>รวมสาย (นาที)</th>
+                <th>รายละเอียด/หมายเหตุสะสม</th>
+                <th>การจัดการ</th>
+            </tr>
+        </thead>
+        <tbody id="summary-individual-table"></tbody>
+    </table>
+</div>
+
+<script>
+    document.getElementById('log-date').valueAsDate = new Date();
+    
+    const currentUser = JSON.parse(sessionStorage.getItem("currentUser")) || { id: "Unknown", firstName: "ผู้ใช้" };
+    document.getElementById("current-user-display").textContent = `[${currentUser.id}] ${currentUser.firstName}`;
+
+    // โหลดรายชื่อพนักงานและคัดกรองตัวที่โดนลบออก
+    let deletedEmployees = JSON.parse(localStorage.getItem("deletedEmployees")) || [];
+    let initialEmployees = typeof excelEmployees !== 'undefined' ? excelEmployees : [];
+    let employees = initialEmployees.filter(e => !deletedEmployees.includes(String(e.id).trim()));
+
+    // ดึงพนักงานใหม่ที่เคยเพิ่มด้วยฟอร์มจาก LocalStorage เข้ามาเสริม
+    let customEmployees = JSON.parse(localStorage.getItem("customEmployees")) || [];
+    customEmployees.forEach(ce => {
+        if(!employees.some(e => String(e.id).trim() === String(ce.id).trim()) && !deletedEmployees.includes(String(ce.id).trim())) {
+            employees.push(ce);
+        }
+    });
+
+    // โหลดประวัติการ ขาด ลา มาสาย
+    let storedLogs = JSON.parse(localStorage.getItem("attendanceLogs")) || [];
+    let initialLogs = typeof excelAttendanceLogs !== 'undefined' ? excelAttendanceLogs : [];
+    let attendanceLogs = [...initialLogs];
+    
+    storedLogs.forEach(sl => {
+        if(!attendanceLogs.some(l => l.date === sl.date && String(l.employeeId).trim() === String(sl.employeeId).trim())) {
+            attendanceLogs.push(sl);
+        }
+    });
+
+    // กรองประวัติของคนที่โดนลบออก
+    attendanceLogs = attendanceLogs.filter(log => !deletedEmployees.includes(String(log.employeeId).trim()));
+
+    updateEmployeeSelect();
+    renderTable();
+
+    // ฟังก์ชันสำหรับเพิ่มพนักงานใหม่เข้าระบบ
+    function addNewEmployee() {
+        const id = document.getElementById("emp-id").value.trim();
+        const firstName = document.getElementById("emp-firstname").value.trim();
+        const lastName = document.getElementById("emp-lastname").value.trim();
+        const department = document.getElementById("emp-dept").value;
+
+        if (!id || !firstName) {
+            alert("กรุณากรอกรหัสพนักงานและชื่อจริงด้วยนะค๊าบ!");
+            return;
+        }
+
+        // ตรวจสอบว่ารหัสซ้ำไหม
+        if (employees.some(e => String(e.id).trim() === String(id))) {
+            alert("รหัสพนักงานนี้มีอยู่ในระบบแล้วค๊าบ!");
+            return;
+        }
+
+        const newEmp = { id, firstName, lastName, department };
+        
+        // บันทึกลงตัวแปรใช้งาน
+        employees.push(newEmp);
+
+        // บันทึกลงกลุ่มที่เพิ่มเองใน LocalStorage เพื่อให้ไม่หายเวลาเคลียร์หรือรีเฟรช
+        let currentCustoms = JSON.parse(localStorage.getItem("customEmployees")) || [];
+        currentCustoms.push(newEmp);
+        localStorage.setItem("customEmployees", JSON.stringify(currentCustoms));
+
+        // ถ้ารหัสนี้เคยอยู่ในรายการโดนลบ ให้เอาออกจากรายการโดนลบ
+        let deletedList = JSON.parse(localStorage.getItem("deletedEmployees")) || [];
+        deletedList = deletedList.filter(item => item !== String(id));
+        localStorage.setItem("deletedEmployees", JSON.stringify(deletedList));
+
+        // เคลียร์ฟอร์ม
+        document.getElementById("emp-id").value = "";
+        document.getElementById("emp-firstname").value = "";
+        document.getElementById("emp-lastname").value = "";
+
+        // อัปเดตหน้าจอ
+        updateEmployeeSelect();
+        renderTable();
+        alert(`เพิ่มพนักงานใหม่ [${id}] คุณ ${firstName} เรียบร้อยแล้วค๊าบ! 🎉`);
+    }
+
+    function updateEmployeeSelect() {
+        const select = document.getElementById("log-emp-select");
+        if (!select) return;
+        select.innerHTML = "";
+        employees.forEach(emp => {
+            const option = document.createElement("option");
+            option.value = emp.id;
+            option.textContent = `[${emp.id}] ${emp.firstName} ${emp.lastName}`;
+            select.appendChild(option);
+        });
+    }
+
+    function toggleLateInput() {
+        const status = document.getElementById("log-status").value;
+        document.getElementById("late-minutes-group").style.display = (status === "มาสาย") ? "block" : "none";
+        if (status !== "มาสาย") document.getElementById("log-late").value = 0;
+    }
+
+    function renderTable() {
+        const summaryBody = document.getElementById("summary-individual-table");
+        if(summaryBody) {
+            summaryBody.innerHTML = "";
+            employees.forEach(emp => {
+                const empLogs = attendanceLogs.filter(log => String(log.employeeId).trim() === String(emp.id).trim());
+                
+                let late = empLogs.filter(l => l.status === "มาสาย").length;
+                let sick = empLogs.filter(l => l.status === "ลาป่วย").length;
+                let personal = empLogs.filter(l => l.status === "ลากิจ").length;
+                let vacation = empLogs.filter(l => l.status === "ลาพักร้อน").length;
+                let absent = empLogs.filter(l => l.status === "ขาดงาน").length;
+                let totalMinutes = empLogs.reduce((sum, l) => sum + (parseInt(l.lateMinutes) || 0), 0);
+                
+                let allRemarks = empLogs.map(l => l.remark).filter(r => r).join(" | ");
+                if(!allRemarks) allRemarks = "-";
+
+                summaryBody.innerHTML += `<tr>
+                    <td><b>${emp.id}</b></td>
+                    <td>${emp.firstName} ${emp.lastName}</td>
+                    <td>${emp.department}</td>
+                    <td class="summary-num" style="color:#f59e0b;">${late > 0 ? late : '-'}</td>
+                    <td class="summary-num" style="color:#ec4899;">${sick > 0 ? sick : '-'}</td>
+                    <td class="summary-num" style="color:#3b82f6;">${personal > 0 ? personal : '-'}</td>
+                    <td class="summary-num" style="color:#10b981;">${vacation > 0 ? vacation : '-'}</td>
+                    <td class="summary-num" style="color:#ef4444;">${absent > 0 ? absent : '-'}</td>
+                    <td><b>${totalMinutes > 0 ? totalMinutes + ' นาที' : '-'}</b></td>
+                    <td><font color="#1e3a8a" size="2">${allRemarks}</font></td>
+                    <td><button class="btn-delete" onclick="deleteEmployee('${emp.id}', '${emp.firstName}')">❌ ลบพนักงาน</button></td>
+                </tr>`;
+            });
+        }
+    }
+
+    function deleteEmployee(empId, empName) {
+        if(confirm(`คุณต้องการลบพนักงาน [${empId}] คุณ ${empName} และประวัติทั้งหมดใช่หรือไม่?`)) {
+            let deletedList = JSON.parse(localStorage.getItem("deletedEmployees")) || [];
+            if(!deletedList.includes(String(empId).trim())) {
+                deletedList.push(String(empId).trim());
+            }
+            localStorage.setItem("deletedEmployees", JSON.stringify(deletedList));
+
+            // เอาออกจากรายการ Custom ด้วย (ถ้ามี)
+            let currentCustoms = JSON.parse(localStorage.getItem("customEmployees")) || [];
+            currentCustoms = currentCustoms.filter(e => String(e.id).trim() !== String(empId).trim());
+            localStorage.setItem("customEmployees", JSON.stringify(currentCustoms));
+
+            employees = employees.filter(e => String(e.id).trim() !== String(empId).trim());
+            attendanceLogs = attendanceLogs.filter(log => String(log.employeeId).trim() !== String(empId).trim());
+            
+            localStorage.setItem("attendanceLogs", JSON.stringify(attendanceLogs));
+
+            updateEmployeeSelect();
+            renderTable();
+        }
+    }
+
+    function autoSaveLog() {
+        const date = document.getElementById("log-date").value;
+        const employeeId = document.getElementById("log-emp-select").value;
+        const status = document.getElementById("log-status").value;
+        const lateMinutes = parseInt(document.getElementById("log-late").value) || 0;
+        const remark = document.getElementById("log-remark").value.trim();
+        if (!employeeId || !date) return;
+
+        const idx = attendanceLogs.findIndex(log => log.date === date && String(log.employeeId).trim() === String(employeeId).trim());
+        if (idx > -1) {
+            attendanceLogs[idx] = { date, employeeId, status, lateMinutes, remark };
+        } else {
+            attendanceLogs.push({ date, employeeId, status, lateMinutes, remark });
+        }
+        localStorage.setItem("attendanceLogs", JSON.stringify(attendanceLogs));
+        renderTable();
+    }
+
+    function changeMyPassword() {
+        const newPass = prompt("กรอกรหัสผ่านใหม่:");
+        if (newPass) alert("เปลี่ยนรหัสผ่านเรียบร้อยแล้วครับ");
+    }
+
+    function logout() {
+        sessionStorage.clear();
+        window.location.href = "login.html"; 
+    }
+</script>
+</body>
+</html>
