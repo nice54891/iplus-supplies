@@ -1,6 +1,4 @@
-// 📄 ไฟล์ employees.js (เวอร์ชันเคลียร์ตัวเลขสถิติ ป่วย-กิจ-พักร้อน-สาย ตรงตามตารางหน้าเว็บหนูเป๊ะ ๆ)
-const excelEmployees = [
-    { id: "1001", firstName: "มณเทียน", lastName: "ทองมนต์", department: "คลังสินค้าและขนส่ง", sick: 0, personal: 0, vacation: 1, late: 0 },
+{ id: "1001", firstName: "มณเทียน", lastName: "ทองมนต์", department: "คลังสินค้าและขนส่ง", sick: 0, personal: 0, vacation: 1, late: 0 },
     { id: "1002", firstName: "มาลัย", lastName: "สุยะตุ่น", department: "คลังสินค้าและขนส่ง", sick: 1, personal: 0, vacation: 0, late: 0 },
     { id: "1003", firstName: "ชูศักดิ์", lastName: "สุยะตุ่น", department: "คลังสินค้าและขนส่ง", sick: 0, personal: 2, vacation: 0, late: 0 },
     { id: "1004", firstName: "ครองทรัพย์", lastName: "นามแสน", department: "คลังสินค้าและขนส่ง", sick: 0, personal: 4, vacation: 1, late: 0 },
