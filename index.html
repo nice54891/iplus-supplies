@@ -109,3 +109,46 @@
     let employees = JSON.parse(localStorage.getItem("employeesData"));
 
     let attendanceLogs = JSON.parse(localStorage.getItem("attendanceLogs")) || [];
+    // ➕ ฟังก์ชันเพิ่มพนักงานใหม่และส่งขึ้น Cloud ออนไลน์ทันที
+async function addEmployee() {
+    const id = document.getElementById("emp-id").value.trim();
+    const firstName = document.getElementById("emp-firstname").value.trim();
+    const lastName = document.getElementById("emp-lastname").value.trim();
+    const department = document.getElementById("emp-dept").value.trim();
+
+    if (!id || !firstName || !lastName || !department) {
+        return alert("กรอกข้อมูลพนักงานใหม่ไม่ครบถ้วนค๊าบคุณคนสวย");
+    }
+
+    try {
+        // เช็กก่อนว่ารหัสพนักงานซ้ำไหมบน Cloud
+        const checkDoc = await db.collection("employeesData").doc(id).get();
+        if (checkDoc.exists) {
+            return alert("❌ รหัสพนักงานนี้มีอยู่ในระบบออนไลน์แล้วค๊าบ!");
+        }
+
+        // บันทึกขึ้น Cloud โดยให้รหัสผ่านเริ่มต้นเป็น 1234
+        await db.collection("employeesData").doc(id).set({
+            firstName: firstName,
+            lastName: lastName,
+            department: department,
+            password: "1234"
+        });
+
+        // ล้างช่องกรอกข้อมูลให้สะอาด
+        document.getElementById("emp-id").value = "";
+        document.getElementById("emp-firstname").value = "";
+        document.getElementById("emp-lastname").value = "";
+        document.getElementById("emp-dept").value = "";
+
+        alert("🎉 เพิ่มพนักงานเข้าสู่ระบบออนไลน์สำเร็จแล้วค๊าบ ✨");
+    } catch (error) {
+        alert("เกิดข้อผิดพลาด: ไม่สามารถเพิ่มพนักงานได้ในขณะนี้");
+    }
+}
+
+// 🔒 ส่วนฟังก์ชันออกจากระบบ (เช็กตัวพิมพ์เล็ก-ใหญ่ของชื่อไฟล์ login.html ด้วยน้า)
+function logout() {
+    sessionStorage.clear();
+    window.location.href = "login.html"; // ⚠️ ถ้าไฟล์จริงชื่อ Login.html ให้แก้เป็นตัว L ใหญ่ด้วยนะครับ
+}
