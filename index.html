@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <script>
+        if (sessionStorage.getItem("isLoggedIn") !== "true") {
+            window.location.href = "login.html";
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการข้อมูล ขาด ลา มาสาย (Auto-Save)</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f4f8; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .header-bar { width: 100%; max-width: 950px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #e2e8f0; padding: 12px 20px; border-radius: 10px; box-sizing: border-box; }
+        .btn-action { border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-left: 10px; }
+        .btn-logout { background-color: #64748b; color: white; }
+        .btn-password { background-color: #0ea5e9; color: white; }
+        .container { width: 100%; max-width: 950px; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 20px; box-sizing: border-box; }
+        h2, h3 { color: #2c3e50; margin-top: 0; }
+        .form-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 10px; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; }
+        label { font-size: 14px; font-weight: bold; color: #4a5568; margin-bottom: 5px; display: block; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        button.btn-add { background-color: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; align-self: end; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 15px; }
+        th, td { padding: 14px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { background-color: #f1f5f9; color: #334155; }
+        tr:hover { background-color: #f8fafc; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; color: white; font-weight: bold; display: inline-block; }
+        .badge-มาสาย { background-color: #f59e0b; }
+        .badge-ลาป่วย { background-color: #ec4899; }
+        .badge-ลากิจ { background-color: #3b82f6; }
+        .badge-ขาดงาน { background-color: #ef4444; }
+        
+        /* สไตล์พิเศษสำหรับตารางสรุปรายบุคคล */
+        .summary-table th { background-color: #0f172a; color: white; }
+        .summary-num { font-weight: bold; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="header-bar">
+    <div>
+        👤 ผู้ใช้งานปัจจุบัน: <span id="current-user-display" style="font-weight: bold; color: #1e3a8a;"></span>
+    </div>
+    <div>
+        <button class="btn-action btn-password" onclick="changeMyPassword()">🔑 เปลี่ยนรหัสผ่านของฉัน</button>
+        <button class="btn-action btn-logout" onclick="logout()">🔒 ออกจากระบบ</button>
+    </div>
+</div>
+
+<div class="container">
+    <h2>➕ 1. เพิ่มรายชื่อพนักงานใหม่ (รหัสผ่านเริ่มต้นคือ 1234)</h2>
+    <div class="form-group">
+        <div><label>รหัสพนักงาน</label><input type="text" id="emp-id" placeholder="เช่น EMP003"></div>
+        <div><label>ชื่อจริง</label><input type="text" id="emp-firstname" placeholder="เช่น สมศักดิ์"></div>
+        <div><label>นามสกุล</label><input type="text" id="emp-lastname" placeholder="เช่น รักดี"></div>
+        <div><label>แผนก</label><input type="text" id="emp-dept" placeholder="เช่น การตลาด"></div>
+        <button class="btn-add" onclick="addEmployee()">+ เพิ่มพนักงาน</button>
+    </div>
+</div>
+
+<div class="container">
+    <h2>📝 2. บันทึกข้อมูล (บันทึกทันทีเมื่อเปลี่ยนค่า)</h2>
+    <div class="form-group">
+        <div><label>วันที่</label><input type="date" id="log-date" onchange="autoSaveLog()"></div>
+        <div><label>เลือกพนักงาน</label><select id="log-emp-select" onchange="autoSaveLog()"></select></div>
+        <div><label>สถานะ</label><select id="log-status" onchange="toggleLateInput(); autoSaveLog();"><option value="มาสาย">มาสาย</option><option value="ลาป่วย">ลาป่วย</option><option value="ลากิจ">ลากิจ</option><option value="ขาดงาน">ขาดงาน</option></select></div>
+        <div id="late-minutes-group"><label>สาย (นาที)</label><input type="number" id="log-late" value="0" min="0" oninput="autoSaveLog()"></div>
+        <div><label>หมายเหตุ</label><input type="text" id="log-remark" placeholder="ระบุเหตุผล..." oninput="autoSaveLog()"></div>
+    </div>
+</div>
+
+<div class="container">
+    <h3>📊 3. สรุปจำนวน ขาด ลา มาสาย สะสม (แยกตามรายบุคคล)</h3>
+    <table class="summary-table">
+        <thead>
+            <tr>
+                <th>รหัสพนักงาน</th>
+                <th>ชื่อ - นามสกุล</th>
+                <th>แผนก</th>
+                <th style="text-align:center; color:#f59e0b;">มาสาย (ครั้ง)</th>
+                <th style="text-align:center; color:#ec4899;">ลาป่วย (ครั้ง)</th>
+                <th style="text-align:center; color:#3b82f6;">ลากิจ (ครั้ง)</th>
+                <th style="text-align:center; color:#ef4444;">ขาดงาน (ครั้ง)</th>
+                <th style="text-align:center;">รวมสาย (นาที)</th>
+            </tr>
+        </thead>
+        <tbody id="summary-individual-table">
+            </tbody>
+    </table>
+</div>
+
+<div class="container">
+    <h3>📋 4. ตารางประวัติรายงานแบบเรียลไทม์</h3>
+    <table>
+        <thead>
+            <tr><th>วันที่</th><th>รหัสพนักงาน</th><th>ชื่อ-นามสกุล</th><th>แผนก</th><th>สถานะ</th><th>สาย (นาที)</th><th>หมายเหตุ</th><th>จัดการ</th></tr>
+        </thead>
+        <tbody id="attendance-table"></tbody>
+    </table>
+</div>
+
+<script>
+    document.getElementById('log-date').valueAsDate = new Date();
+
+    const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
+    document.getElementById("current-user-display").textContent = `[${currentUser.id}] ${currentUser.firstName} (${currentUser.department})`;
+
+    let employees = JSON.parse(localStorage.getItem("employeesData"));
+
+    let attendanceLogs = JSON.parse(localStorage.getItem("attendanceLogs")) || [];
