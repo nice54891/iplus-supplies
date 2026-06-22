@@ -28,6 +28,7 @@
         .badge-มาสาย { background-color: #f59e0b; }
         .badge-ลาป่วย { background-color: #ec4899; }
         .badge-ลากิจ { background-color: #3b82f6; }
+        .badge-ลาพักร้อน { background-color: #10b981; } /* สีเขียวสดใสสำหรับลาพักร้อน */
         .badge-ขาดงาน { background-color: #ef4444; }
         .summary-num { font-weight: bold; text-align: center; }
         .btn-delete { background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size: 13px; font-weight: bold; }
@@ -60,7 +61,15 @@
     <div class="form-group">
         <div><label>วันที่เกิดเหตุ</label><input type="date" id="log-date" onchange="autoSaveLog()"></div>
         <div><label>เลือกพนักงาน</label><select id="log-emp-select" onchange="autoSaveLog()"></select></div>
-        <div><label>สถานะ</label><select id="log-status" onchange="toggleLateInput(); autoSaveLog();"><option value="มาสาย">มาสาย</option><option value="ลาป่วย">ลาป่วย</option><option value="ลากิจ">ลากิจ</option><option value="ขาดงาน">ขาดงาน</option></select></div>
+        <div>
+            <label>สถานะ</label>
+            <select id="log-status" onchange="toggleLateInput(); autoSaveLog();">
+                <option value="มาสาย">มาสาย</option>
+                <option value="ลาป่วย">ลาป่วย</option>
+                <option value="ลากิจ">ลากิจ</option>
+                <option value="ลาพักร้อน">ลาพักร้อน</option> <option value="ขาดงาน">ขาดงาน</option>
+            </select>
+        </div>
         <div id="late-minutes-group"><label>สาย (นาที)</label><input type="number" id="log-late" value="0" min="0" oninput="autoSaveLog()"></div>
         <div><label>หมายเหตุ</label><input type="text" id="log-remark" placeholder="ระบุเหตุผล..." oninput="autoSaveLog()"></div>
     </div>
@@ -75,7 +84,7 @@
                 <th style="color:#f59e0b;text-align:center;">สาย (ครั้ง)</th>
                 <th style="color:#ec4899;text-align:center;">ป่วย (ครั้ง)</th>
                 <th style="color:#3b82f6;text-align:center;">กิจ (ครั้ง)</th>
-                <th style="color:#ef4444;text-align:center;">ขาด (ครั้ง)</th>
+                <th style="color:#10b981;text-align:center;">พักร้อน (ครั้ง)</th> <th style="color:#ef4444;text-align:center;">ขาด (ครั้ง)</th>
                 <th>รวมสาย (นาที)</th>
                 <th>การจัดการ</th>
             </tr>
@@ -88,163 +97,4 @@
     <h3>📋 4. ตารางประวัติรายงานประจำวัน</h3>
     <table>
         <thead>
-            <tr><th>วันที่</th><th>รหัสพนักงาน</th><th>ชื่อ-นามสกุล</th><th>แผนก</th><th>สถานะ</th><th>สาย (นาที)</th><th>หมายเหตุ</th><th>จัดการประวัติ</th></tr>
-        </thead>
-        <tbody id="attendance-table"></tbody>
-    </table>
-</div>
-
-<script>
-    document.getElementById('log-date').valueAsDate = new Date();
-    
-    const currentUser = JSON.parse(sessionStorage.getItem("currentUser")) || { id: "Unknown", firstName: "ผู้ใช้" };
-    document.getElementById("current-user-display").textContent = `[${currentUser.id}] ${currentUser.firstName}`;
-
-    let employees = JSON.parse(localStorage.getItem("employeesData")) || [];
-    let attendanceLogs = JSON.parse(localStorage.getItem("attendanceLogs")) || [];
-
-    updateEmployeeSelect();
-    renderTable();
-
-    function updateEmployeeSelect() {
-        const select = document.getElementById("log-emp-select");
-        if (!select) return;
-        const currentVal = select.value;
-        select.innerHTML = "";
-        employees.forEach(emp => {
-            const option = document.createElement("option");
-            option.value = emp.id;
-            option.textContent = `[${emp.id}] ${emp.firstName} ${emp.lastName}`;
-            select.appendChild(option);
-        });
-        if(currentVal) select.value = currentVal;
-    }
-
-    function toggleLateInput() {
-        const status = document.getElementById("log-status").value;
-        document.getElementById("late-minutes-group").style.display = (status === "มาสาย") ? "block" : "none";
-        if (status !== "มาสาย") document.getElementById("log-late").value = 0;
-    }
-
-    function renderTable() {
-        const tableBody = document.getElementById("attendance-table");
-        if(!tableBody) return;
-        tableBody.innerHTML = "";
-        
-        attendanceLogs.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(log => {
-            const emp = employees.find(e => e.id === log.employeeId);
-            if (emp) {
-                tableBody.innerHTML += `<tr>
-                    <td>${log.date}</td><td><b>${log.employeeId}</b></td><td>${emp.firstName} ${emp.lastName}</td><td>${emp.department}</td>
-                    <td><span class="badge badge-${log.status}">${log.status}</span></td>
-                    <td>${log.lateMinutes > 0 ? log.lateMinutes + ' นาที' : '-'}</td><td><font color="gray">${log.remark || '-'}</font></td>
-                    <td><button class="btn-delete" onclick="deleteLog('${log.date + log.employeeId}')">ลบประวัติ</button></td>
-                </tr>`;
-            }
-        });
-
-        const summaryBody = document.getElementById("summary-individual-table");
-        if(!summaryBody) return;
-        summaryBody.innerHTML = "";
-        employees.forEach(emp => {
-            const empLogs = attendanceLogs.filter(log => log.employeeId === emp.id);
-            let late = empLogs.filter(l => l.status === "มาสาย").length;
-            let sick = empLogs.filter(l => l.status === "ลาป่วย").length;
-            let personal = empLogs.filter(l => l.status === "ลากิจ").length;
-            let absent = empLogs.filter(l => l.status === "ขาดงาน").length;
-            let totalMinutes = empLogs.reduce((sum, l) => sum + (parseInt(l.lateMinutes) || 0), 0);
-
-            summaryBody.innerHTML += `<tr>
-                <td><b>${emp.id}</b></td><td>${emp.firstName} ${emp.lastName}</td><td>${emp.department}</td>
-                <td class="summary-num" style="color:#f59e0b;">${late}</td><td class="summary-num" style="color:#ec4899;">${sick}</td>
-                <td class="summary-num" style="color:#3b82f6;">${personal}</td><td class="summary-num" style="color:#ef4444;">${absent}</td>
-                <td><b>${totalMinutes > 0 ? totalMinutes + ' นาที' : '-'}</b></td>
-                <td><button class="btn-delete" onclick="deleteEmployee('${emp.id}')">❌ ลบพนักงาน</button></td>
-            </tr>`;
-        });
-    }
-
-    function autoSaveLog() {
-        const date = document.getElementById("log-date").value;
-        const employeeId = document.getElementById("log-emp-select").value;
-        const status = document.getElementById("log-status").value;
-        const lateMinutes = parseInt(document.getElementById("log-late").value) || 0;
-        const remark = document.getElementById("log-remark").value.trim();
-        if (!employeeId || !date) return;
-
-        const idx = attendanceLogs.findIndex(log => log.date === date && log.employeeId === employeeId);
-        if (idx > -1) {
-            attendanceLogs[idx] = { date, employeeId, status, lateMinutes, remark };
-        } else {
-            attendanceLogs.push({ date, employeeId, status, lateMinutes, remark });
-        }
-        localStorage.setItem("attendanceLogs", JSON.stringify(attendanceLogs));
-        renderTable();
-    }
-
-    function addEmployee() {
-        const id = document.getElementById("emp-id").value.trim();
-        const firstName = document.getElementById("emp-firstname").value.trim();
-        const lastName = document.getElementById("emp-lastname").value.trim();
-        const department = document.getElementById("emp-dept").value.trim();
-        if (!id || !firstName || !lastName || !department) return alert("กรอกข้อมูลไม่ครบถ้วนค๊าบ!");
-
-        if (employees.some(e => e.id === id)) return alert("รหัสพนักงานซ้ำค๊าบ!");
-        
-        employees.push({ id, firstName, lastName, department, password: "1234" });
-        localStorage.setItem("employeesData", JSON.stringify(employees));
-        
-        document.getElementById("emp-id").value = "";
-        document.getElementById("emp-firstname").value = "";
-        document.getElementById("emp-lastname").value = "";
-        document.getElementById("emp-dept").value = "";
-        
-        updateEmployeeSelect();
-        renderTable();
-        alert("🎉 เพิ่มพนักงานเข้าเครื่องสำเร็จแล้วค๊าบ ✨");
-    }
-
-    // 🔥 ฟังก์ชันเด็ด: สั่งลบรายชื่อพนักงานออกจากหน้าจอและเครื่องคอมพิวเตอร์
-    function deleteEmployee(empId) {
-        if (confirm(`คุณต้องการลบพนักงานรหัส [${empId}] ออกใช่ไหมครับ?\n(ประวัติการ ขาด ลา สาย ของคนนี้จะถูกลบออกไปด้วยนะ)`)) {
-            // 1. กรองเอารายชื่อคนนี้ออกไป
-            employees = employees.filter(e => e.id !== empId);
-            localStorage.setItem("employeesData", JSON.stringify(employees));
-
-            // 2. ลบประวัติเก่าของคนนี้ทิ้งเพื่อไม่ให้ข้อมูลค้างในระบบ
-            attendanceLogs = attendanceLogs.filter(log => log.employeeId !== empId);
-            localStorage.setItem("attendanceLogs", JSON.stringify(attendanceLogs));
-
-            // 3. สั่งวาดตารางใหม่ทันที
-            updateEmployeeSelect();
-            renderTable();
-            alert("ลบรายชื่อพนักงานเรียบร้อยแล้วค๊าบ!");
-        }
-    }
-
-    function changeMyPassword() {
-        const newPass = prompt("กรอกรหัสผ่านใหม่:", currentUser.password || "1234");
-        if (!newPass || !newPass.trim()) return;
-        
-        const idx = employees.findIndex(e => e.id === currentUser.id);
-        if(idx > -1) {
-            employees[idx].password = newPass.trim();
-            localStorage.setItem("employeesData", JSON.stringify(employees));
-        }
-        alert("เปลี่ยนรหัสผ่านเรียบร้อยแล้วครับ");
-    }
-
-    function deleteLog(id) {
-        if(!confirm("ต้องการลบรายการนี้ใช่ไหมครับ?")) return;
-        attendanceLogs = attendanceLogs.filter(log => (log.date + log.employeeId) !== id);
-        localStorage.setItem("attendanceLogs", JSON.stringify(attendanceLogs));
-        renderTable();
-    }
-
-    function logout() {
-        sessionStorage.clear();
-        window.location.href = "login.html"; 
-    }
-</script>
-</body>
-</html>
+            <tr><th>วันที่</th><th>รหัสพนักงาน</th><th>ชื่อ-นามสกุล</th><th>แผน
